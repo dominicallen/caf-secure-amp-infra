@@ -1,0 +1,38 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "workspaceName": {
+            "type": "string",
+            "metadata": {
+                "displayName": "Workspace Name"
+            }
+        },
+        "retentionInDays": {
+            "type": "int",
+            "metadata": {
+                "displayName": "Data retention (days)",
+                "description": "Select data retention (days) for Log Analytics."
+            },
+            "defaultValue": 30
+        }
+    },
+    "variables": {
+        "workspaceSku": "pergb2018"
+    },
+    "resources": [
+        {
+            "apiVersion": "2020-10-01",
+            "location": "[resourceGroup().location]",
+            "name": "[parameters('workspaceName')]",
+            "type": "Microsoft.OperationalInsights/workspaces",
+            "properties": {
+                "sku": {
+                    "name": "[variables('workspaceSku')]"
+                },
+                "retentionInDays": "[parameters('retentionInDays')]"
+            }
+        }
+    ],
+    "outputs": {}
+}

@@ -124,13 +124,15 @@
         }
     },
     "variables": {
+        "templateRootUri": "https://raw.githubusercontent.com/mspnp/caf-secure-amp-infra/pabrus/hubspoke/deploy/auxiliary/",
         "logsEnabled": "[if(equals(parameters('enableLogs'), 'Yes'), 'True', 'False')]",
         "resourceGroupName": "[concat('rg-', parameters('deploymentPrefix'))]",
         "resourceGroupId": "[subscriptionResourceId('Microsoft.Resources/resourceGroups/', variables('resourceGroupName'))]",
 
+        "hubSpokeDeploymentName": "[concat('deployment-', parameters('deploymentPrefix'), '-hubspoke')]",
+
         "workspaceName": "[concat('log-', parameters('deploymentPrefix'))]",
         "workspaceId": "[concat(subscription().id, '/resourceGroups/', variables('resourceGroupName'), '/providers/Microsoft.OperationalInsights/workspaces/', variables('workspaceName'))]",
-        "workspaceSku": "pergb2018",
         "workspaceDeploymentName": "[concat('deployment-', parameters('deploymentPrefix'), '-log')]",
         "workspaceDeploymentId": "[concat(subscription().id, '/resourceGroups/', variables('resourceGroupName'), '/providers/Microsoft.Resources/deployments/', variables('workspaceDeploymentName'))]",
 
@@ -197,26 +199,40 @@
             ],
             "properties": {
                 "mode": "Incremental",
-                "template": {
-                    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
-                    "contentVersion": "1.0.0.0",
-                    "parameters": {},
-                    "variables": {},
-                    "resources": [
-                        {
-                            "apiVersion": "2020-10-01",
-                            "location": "[deployment().location]",
-                            "name": "[variables('workspaceName')]",
-                            "type": "Microsoft.OperationalInsights/workspaces",
-                            "properties": {
-                                "sku": {
-                                    "name": "[variables('workspaceSku')]"
-                                },
-                                "retentionInDays": "[parameters('retentionInDays')]"
-                            }
-                        }
-                    ],
-                    "outputs": {}
+                "templateLink": {
+                    "uri": "[concat(variables('templateRootUri'), 'caf-secure-logAnalyticsWorkspace.json')]",
+                    "contentVersion":"1.0.0.0"
+                },
+                "parameters": {
+                    "workspaceName": {
+                        "value": "[variables('workspaceName')]"
+                    },
+                    "retentionInDays": {
+                        "value": "[parameters('retentionInDays')]"
+                    }
+                }
+            }
+        },
+
+        // Deploy hubspoke network into resource group
+        {
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2020-10-01",
+            "name": "[variables('hubSpokeDeploymentName')]",
+            "resourceGroup": "[variables('resourceGroupName')]",
+            "dependsOn": [
+                "[variables('resourceGroupId')]"
+            ],
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[concat(variables('templateRootUri'), 'caf-secure-hubSpoke.json')]",
+                    "contentVersion":"1.0.0.0"
+                },
+                "parameters": {
+                    "deploymentPrefix": {
+                        "value": "[parameters('deploymentPrefix')]"
+                    }
                 }
             }
         },

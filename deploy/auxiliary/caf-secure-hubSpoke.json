@@ -1,0 +1,151 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "deploymentPrefix": {
+            "type": "string",
+            "maxLength": 10,
+            "metadata": {
+                "displayName": "Deployment prefix",
+                "description": "Provide a prefix (max 10 characters, unique at tenant-scope) for subscription resources created as part of this deploy."
+            },
+            "defaultValue": "cafsecure"
+        }
+    },
+    "variables": {
+        "location": "[resourceGroup().location]",
+        "spokeNetworkOne": {
+            "name": "[concat('vnet-', parameters('deploymentPrefix'), '-spoke-one')]",
+            "addressPrefix": "10.1.0.0/16",
+            "subnetName": "[concat('snet-', parameters('deploymentPrefix'), '-spoke-one-workload')]",
+            "subnetPrefix": "10.1.0.0/24"
+        },
+        "spokeNetworkTwo": {
+            "name": "[concat('vnet-', parameters('deploymentPrefix'), '-spoke-two')]",
+            "addressPrefix": "10.2.0.0/16",
+            "subnetName": "[concat('snet-', parameters('deploymentPrefix'), '-spoke-two-workload')]",
+            "subnetPrefix": "10.2.0.0/24"
+        },
+        "hubNetwork": {
+            "vWanName": "[concat('vwan-', parameters('deploymentPrefix'))]",
+            "vHubName": "[concat('vhub-', parameters('deploymentPrefix'))]",
+            "addressPrefix": "192.168.0.0/16"
+        }
+    },
+    "resources": [
+
+        // Spoke one network and diagnostic configuration
+        {
+            "type": "Microsoft.Network/virtualNetworks",
+            "apiVersion": "2020-05-01",
+            "name": "[variables('spokeNetworkOne').name]",
+            "location": "[variables('location')]",
+            "properties": {
+                "addressSpace": {
+                    "addressPrefixes": [
+                        "[variables('spokeNetworkOne').addressPrefix]"
+                    ]
+                },
+                "subnets": [
+                    {
+                        "name": "[variables('spokeNetworkOne').subnetName]",
+                        "properties": {
+                            "addressPrefix": "[variables('spokeNetworkOne').subnetPrefix]"
+                        }
+                    }
+                ]
+            }
+        },
+
+        // Spoke two network and diagnostic configuration
+        {
+            "type": "Microsoft.Network/virtualNetworks",
+            "apiVersion": "2020-05-01",
+            "name": "[variables('spokeNetworkTwo').name]",
+            "location": "[variables('location')]",
+            "properties": {
+                "addressSpace": {
+                    "addressPrefixes": [
+                        "[variables('spokeNetworkTwo').addressPrefix]"
+                    ]
+                },
+                "subnets": [
+                    {
+                        "name": "[variables('spokeNetworkTwo').subnetName]",
+                        "properties": {
+                            "addressPrefix": "[variables('spokeNetworkTwo').subnetPrefix]"
+                        }
+                    }
+                ]
+            }
+        },
+
+        // Virtual WAN and Virtual Hub
+        {
+            "type": "Microsoft.Network/virtualWans",
+            "apiVersion": "2020-11-01",
+            "name": "[variables('hubNetwork').vWanName]",
+            "location": "[variables('location')]",
+            "properties": {
+                "virtualHubs": [],
+                "vpnSites": [],
+                "allowVnetToVnetTraffic": true,
+                "allowBranchToBranchTraffic": true,
+                "type": "Standard"
+            }
+        },
+        {
+            "type": "Microsoft.Network/virtualHubs",
+            "apiVersion": "2020-11-01",
+            "name": "[variables('hubNetwork').vHubName]",
+            "location": "[variables('location')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/virtualWans', variables('hubNetwork').vWanName)]"
+            ],
+            "properties": {
+                "virtualWan": {
+                    "id": "[resourceId('Microsoft.Network/virtualWans', variables('hubNetwork').vWanName)]"
+                },
+                "addressPrefix": "[variables('hubNetwork').addressPrefix]",
+                "sku": "Standard"
+            }
+        },
+
+        // Virtual connections between Virtual Hub and Spokes VNets
+        {
+            "type": "Microsoft.Network/virtualHubs/hubVirtualNetworkConnections",
+            "apiVersion": "2020-11-01",
+            "name": "[concat(variables('hubNetwork').vHubName, '/connection-to-', variables('spokeNetworkOne').name)]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/virtualHubs', variables('hubNetwork').vHubName)]",
+                "[resourceId('Microsoft.Network/virtualNetworks', variables('spokeNetworkOne').name)]"
+            ],
+            "properties": {
+                "remoteVirtualNetwork": {
+                    "id": "[resourceId('Microsoft.Network/virtualNetworks', variables('spokeNetworkOne').name)]"
+                },
+                "allowHubToRemoteVnetTransit": true,
+                "allowRemoteVnetToUseHubVnetGateways": true,
+                "enableInternetSecurity": true
+            }
+        },
+        {
+            "type": "Microsoft.Network/virtualHubs/hubVirtualNetworkConnections",
+            "apiVersion": "2020-11-01",
+            "name": "[concat(variables('hubNetwork').vHubName, '/connection-to-', variables('spokeNetworkTwo').name)]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/virtualHubs', variables('hubNetwork').vHubName)]",
+                "[resourceId('Microsoft.Network/virtualNetworks', variables('spokeNetworkTwo').name)]",
+                "[resourceId('Microsoft.Network/virtualHubs/hubVirtualNetworkConnections', variables('hubNetwork').vHubName, concat('connection-to-', variables('spokeNetworkOne').name))]"
+            ],
+            "properties": {
+                "remoteVirtualNetwork": {
+                    "id": "[resourceId('Microsoft.Network/virtualNetworks', variables('spokeNetworkTwo').name)]"
+                },
+                "allowHubToRemoteVnetTransit": true,
+                "allowRemoteVnetToUseHubVnetGateways": true,
+                "enableInternetSecurity": true
+            }
+        }
+    ]
+}
