@@ -346,6 +346,26 @@
                         }
                     },
                     {
+                        "name": "ptEnableDdoS",
+                        "type": "Microsoft.Common.OptionsGroup",
+                        "label": "Enables DDoS Protection plan",
+                        "defaultValue": "Yes (recommended)",
+                        "toolTip": "If 'Yes', ARM will deploy DDoS Protection plan. If 'No', it will be skipped",
+                        "visible": "[equals(steps('step2').ptDeployHubSpoke, 'Yes')]",
+                        "constraints": {
+                            "allowedValues": [
+                                {
+                                    "label": "Yes (recommended)",
+                                    "value": "Yes"
+                                },
+                                {
+                                    "label": "No",
+                                    "value": "No"
+                                }
+                            ]
+                        }
+                    },
+                    {
                         "name": "ptHubAddressPrefix",
                         "type": "Microsoft.Common.TextBox",
                         "label": "Hub Address Prefix",
@@ -445,6 +465,7 @@
             "enableAscForDns": "[steps('step1').sectionAzureDefender.ptEnableAscForDns]",
             "enableAscForRegistries": "[steps('step1').sectionAzureDefender.ptEnableAscForRegistries]",
             "deployHubSpokeTopology": "[steps('step2').ptDeployHubSpoke]",
+            "enableDdoS": "[steps('step2').ptEnableDdoS]",
             "spokeNetworkOneNetAddressPrefix": "[steps('step2').sectionSpokeOne.ptNetAddressPrefix]",
             "spokeNetworkOneSubnetAddressPrefix": "[steps('step2').sectionSpokeOne.ptSubnetAddressPrefix]",
             "spokeNetworkTwoNetAddressPrefix": "[steps('step2').sectionSpokeTwo.ptNetAddressPrefix]",

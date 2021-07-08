@@ -134,6 +134,18 @@
                 "No"
             ]
         },
+        "enableDdoS": {
+            "type": "String",
+            "metadata": {
+                "displayName": "Enables DDoS Protection plan",
+                "description": "If 'Yes', ARM will deploy DDoS Protection plan. If 'No', it will be skipped"
+            },
+            "defaultValue": "Yes",
+            "allowedValues": [
+                "Yes",
+                "No"
+            ]
+        },
         "spokeNetworkOneNetAddressPrefix": {
             "type": "string",
             "metadata": {
@@ -176,11 +188,11 @@
         "resourceGroupName": "[concat('rg-', parameters('deploymentPrefix'))]",
         "resourceGroupId": "[subscriptionResourceId('Microsoft.Resources/resourceGroups/', variables('resourceGroupName'))]",
 
-        "hubSpokeDeploymentName": "[concat('deployment-', parameters('deploymentPrefix'), '-hubspoke')]",
+        "hubSpokeDeploymentName": "[concat('deploy-', parameters('deploymentPrefix'), '-hubspoke-', parameters('deploymentUniqueId'))]",
 
         "workspaceName": "[concat('log-', parameters('deploymentPrefix'))]",
         "workspaceId": "[concat(subscription().id, '/resourceGroups/', variables('resourceGroupName'), '/providers/Microsoft.OperationalInsights/workspaces/', variables('workspaceName'))]",
-        "workspaceDeploymentName": "[concat('deployment-', parameters('deploymentPrefix'), '-log')]",
+        "workspaceDeploymentName": "[concat('deploy-', parameters('deploymentPrefix'), '-log-', parameters('deploymentUniqueId'))]",
         "workspaceDeploymentId": "[concat(subscription().id, '/resourceGroups/', variables('resourceGroupName'), '/providers/Microsoft.Resources/deployments/', variables('workspaceDeploymentName'))]",
 
         "policyDefinitionName-Prefix": "[concat('policy-', parameters('deploymentPrefix'), '-')]",
@@ -295,6 +307,9 @@
                     },
                     "hubNetworkNetAddressPrefix": {
                         "value": "[parameters('hubNetworkNetAddressPrefix')]"
+                    },
+                    "enableDdoS": {
+                        "value": "[parameters('enableDdoS')]"
                     }
                 }
             }
@@ -1338,6 +1353,21 @@
                 "principalType": "ServicePrincipal",
                 "roleDefinitionId": "[variables('roleId-SecurityAdmin')]",
                 "principalId": "[reference(variables('policyAssignmentId-EnableSecurityCenter'), '2020-03-01', 'Full').identity.principalId]"
+            }
+        },
+
+        {
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2020-10-01",
+            "name": "pid-d144d13e-71ea-439a-91e0-320d3c6d49e7",
+            "location": "[deployment().location]",
+            "properties": {
+                "mode": "Incremental",
+                "template": {
+                    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                    "contentVersion": "1.0.0.0",
+                    "resources": []
+                }
             }
         }
     ],

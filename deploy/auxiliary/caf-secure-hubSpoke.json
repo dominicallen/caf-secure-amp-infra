@@ -45,10 +45,26 @@
                 "displayName": "IP address prefix for the hub network"
             },
             "defaultValue": "192.168.0.0/16"
+        },
+        "enableDdoS": {
+            "type": "string",
+            "defaultValue": "Yes",
+            "allowedValues": [
+                "Yes",
+                "No"
+            ],
+            "metadata": {
+                "description": "Select whether the DDoS Standard protection plan should be enabled or not."
+            }
         }
     },
     "variables": {
         "location": "[resourceGroup().location]",
+        "dDoSName": "[concat('ddos-', parameters('deploymentPrefix'))]",
+        "hubNetwork": {
+            "name": "[concat('vnet-', parameters('deploymentPrefix'), '-hub')]",
+            "addressPrefix": "[parameters('hubNetworkNetAddressPrefix')]"
+        },
         "spokeNetworkOne": {
             "name": "[concat('vnet-', parameters('deploymentPrefix'), '-spoke-one')]",
             "addressPrefix": "[parameters('spokeNetworkOneNetAddressPrefix')]",
@@ -60,16 +76,45 @@
             "addressPrefix": "[parameters('spokeNetworkTwoNetAddressPrefix')]",
             "subnetName": "[concat('snet-', parameters('deploymentPrefix'), '-spoke-two-workload')]",
             "subnetPrefix": "[parameters('spokeNetworkTwoSubnetAddressPrefix')]"
-        },
-        "hubNetwork": {
-            "vWanName": "[concat('vwan-', parameters('deploymentPrefix'))]",
-            "vHubName": "[concat('vhub-', parameters('deploymentPrefix'))]",
-            "addressPrefix": "[parameters('hubNetworkNetAddressPrefix')]"
         }
     },
     "resources": [
 
-        // Spoke one network and diagnostic configuration
+        // DDoS Protection plan
+        {
+            "condition": "[equals(parameters('enableDdoS'), 'Yes')]",
+            "type": "Microsoft.Network/ddosProtectionPlans",
+            "apiVersion": "2019-02-01",
+            "name": "[variables('dDoSName')]",
+            "location": "[variables('location')]",
+            "properties": {}
+        },
+
+        // Hub virtual network
+        {
+            "type": "Microsoft.Network/virtualNetworks",
+            "apiVersion": "2020-05-01",
+            "name": "[variables('hubNetwork').name]",
+            "location": "[variables('location')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/ddosProtectionPlans', variables('dDoSName'))]"
+            ],
+            "properties": {
+                "addressSpace": {
+                    "addressPrefixes": [
+                        "[variables('hubNetwork').addressPrefix]"
+                    ]
+                },
+                "subnets": [
+                ],
+                "enableDdosProtection": "[if(equals(parameters('enableDdoS'), 'Yes'), 'true', 'false')]",
+                "ddosProtectionPlan": {
+                    "id": "[if(equals(parameters('enableDdoS'), 'Yes'), resourceId('Microsoft.Network/ddosProtectionPlans', variables('dDoSName')), json('null'))]"
+                }
+            }
+        },
+
+        // Spoke one network
         {
             "type": "Microsoft.Network/virtualNetworks",
             "apiVersion": "2020-05-01",
@@ -92,7 +137,7 @@
             }
         },
 
-        // Spoke two network and diagnostic configuration
+        // Spoke two network
         {
             "type": "Microsoft.Network/virtualNetworks",
             "apiVersion": "2020-05-01",
@@ -115,71 +160,84 @@
             }
         },
 
-        // Virtual WAN and Virtual Hub
+        // Virtual network peering spoke one to hub
         {
-            "type": "Microsoft.Network/virtualWans",
-            "apiVersion": "2020-11-01",
-            "name": "[variables('hubNetwork').vWanName]",
-            "location": "[variables('location')]",
-            "properties": {
-                "virtualHubs": [],
-                "vpnSites": [],
-                "allowVnetToVnetTraffic": true,
-                "allowBranchToBranchTraffic": true,
-                "type": "Standard"
-            }
-        },
-        {
-            "type": "Microsoft.Network/virtualHubs",
-            "apiVersion": "2020-11-01",
-            "name": "[variables('hubNetwork').vHubName]",
+            "type": "Microsoft.Network/virtualNetworks/virtualNetworkPeerings",
+            "apiVersion": "2020-05-01",
+            "name": "[concat(variables('spokeNetworkOne').name, '/peer-to-', variables('hubNetwork').name)]",
             "location": "[variables('location')]",
             "dependsOn": [
-                "[resourceId('Microsoft.Network/virtualWans', variables('hubNetwork').vWanName)]"
-            ],
-            "properties": {
-                "virtualWan": {
-                    "id": "[resourceId('Microsoft.Network/virtualWans', variables('hubNetwork').vWanName)]"
-                },
-                "addressPrefix": "[variables('hubNetwork').addressPrefix]",
-                "sku": "Standard"
-            }
-        },
-
-        // Virtual connections between Virtual Hub and Spokes VNets
-        {
-            "type": "Microsoft.Network/virtualHubs/hubVirtualNetworkConnections",
-            "apiVersion": "2020-11-01",
-            "name": "[concat(variables('hubNetwork').vHubName, '/connection-to-', variables('spokeNetworkOne').name)]",
-            "dependsOn": [
-                "[resourceId('Microsoft.Network/virtualHubs', variables('hubNetwork').vHubName)]",
+                "[resourceId('Microsoft.Network/virtualNetworks', variables('hubNetwork').name)]",
                 "[resourceId('Microsoft.Network/virtualNetworks', variables('spokeNetworkOne').name)]"
             ],
             "properties": {
                 "remoteVirtualNetwork": {
-                    "id": "[resourceId('Microsoft.Network/virtualNetworks', variables('spokeNetworkOne').name)]"
+                    "id": "[resourceId('Microsoft.Network/virtualNetworks', variables('hubNetwork').name)]"
                 },
-                "allowHubToRemoteVnetTransit": true,
-                "allowRemoteVnetToUseHubVnetGateways": true,
-                "enableInternetSecurity": true
+                "allowVirtualNetworkAccess": true,
+                "allowForwardedTraffic": true,
+                "allowGatewayTransit": true,
+                "useRemoteGateways": false
             }
         },
+        // Virtual network peering hub to spoke one
         {
-            "type": "Microsoft.Network/virtualHubs/hubVirtualNetworkConnections",
-            "apiVersion": "2020-11-01",
-            "name": "[concat(variables('hubNetwork').vHubName, '/connection-to-', variables('spokeNetworkTwo').name)]",
+            "type": "Microsoft.Network/virtualNetworks/virtualNetworkPeerings",
+            "apiVersion": "2020-05-01",
+            "name": "[concat(variables('hubNetwork').name, '/peer-to-', variables('spokeNetworkOne').name)]",
+            "location": "[variables('location')]",
             "dependsOn": [
-                "[resourceId('Microsoft.Network/virtualHubs', variables('hubNetwork').vHubName)]",
-                "[resourceId('Microsoft.Network/virtualNetworks', variables('spokeNetworkTwo').name)]",
-                "[resourceId('Microsoft.Network/virtualHubs/hubVirtualNetworkConnections', variables('hubNetwork').vHubName, concat('connection-to-', variables('spokeNetworkOne').name))]"
+                "[resourceId('Microsoft.Network/virtualNetworks', variables('hubNetwork').name)]",
+                "[resourceId('Microsoft.Network/virtualNetworks', variables('spokeNetworkOne').name)]"
+            ],
+            "properties": {
+                "allowVirtualNetworkAccess": true,
+                "allowForwardedTraffic": true,
+                "allowGatewayTransit": true,
+                "useRemoteGateways": false,
+                "remoteVirtualNetwork": {
+                    "id": "[resourceId('Microsoft.Network/virtualNetworks', variables('spokeNetworkOne').name)]"
+                }
+            }
+        },
+        // Virtual network peering hub to spoke two
+        {
+            "type": "Microsoft.Network/virtualNetworks/virtualNetworkPeerings",
+            "apiVersion": "2020-05-01",
+            "name": "[concat(variables('hubNetwork').name, '/peer-to-', variables('spokeNetworkTwo').name)]",
+            "location": "[variables('location')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/virtualNetworks', variables('hubNetwork').name)]",
+                "[resourceId('Microsoft.Network/virtualNetworks', variables('spokeNetworkTwo').name)]"
             ],
             "properties": {
                 "remoteVirtualNetwork": {
                     "id": "[resourceId('Microsoft.Network/virtualNetworks', variables('spokeNetworkTwo').name)]"
                 },
-                "allowHubToRemoteVnetTransit": true,
-                "allowRemoteVnetToUseHubVnetGateways": true,
-                "enableInternetSecurity": true
+                "allowVirtualNetworkAccess": true,
+                "allowForwardedTraffic": true,
+                "allowGatewayTransit": true,
+                "useRemoteGateways": false
+            }
+        },
+        // Virtual network peering spoke two to hub
+        {
+            "type": "Microsoft.Network/virtualNetworks/virtualNetworkPeerings",
+            "apiVersion": "2020-05-01",
+            "name": "[concat(variables('spokeNetworkTwo').name, '/peer-to-', variables('hubNetwork').name)]",
+            "location": "[variables('location')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/virtualNetworks', variables('hubNetwork').name)]",
+                "[resourceId('Microsoft.Network/virtualNetworks', variables('spokeNetworkTwo').name)]"
+            ],
+            "properties": {
+                "allowVirtualNetworkAccess": true,
+                "allowForwardedTraffic": true,
+                "allowGatewayTransit": true,
+                "useRemoteGateways": false,
+                "remoteVirtualNetwork": {
+                    "id": "[resourceId('Microsoft.Network/virtualNetworks', variables('hubNetwork').name)]"
+                }
             }
         }
     ]

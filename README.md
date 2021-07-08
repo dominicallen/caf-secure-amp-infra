@@ -58,7 +58,7 @@ Azure Onboarding is implemented using a single deployment script that wil create
   - Azure Security Benchmark
   - Azure CIS Regulatory reporting
 - Azure Policy
-- Hub-spoke Network Topology with Azure Virtual WAN
+- Hub-spoke Network Topology
 
 Use the following link to deploy it to a greenfield subscription:
 
@@ -70,11 +70,15 @@ Deploys a new log analytics workspace and configures diagnostic setting to send 
 
 > When using a custom log workspace, in multi geo deployments, the log agent will still send logs to the a single workspace (located in one of the geos). This can cause undesired costs associated with cross-geo traffic. One possible solution can be found in [Azure Security Center Repository](https://github.com/Azure/Azure-Security-Center/tree/main/Pricing%20%26%20Settings/Azure%20Policy%20definitions/Workspace%20Management/Regional%20Workspaces)
 
-### Hub-spoke Network Topology with Azure Virtual WAN
+### Hub-spoke Network Topology
 
-This section implements a hub-spoke topology in Azure. The hub virtual network acts as a central point of connectivity to many spoke virtual networks. The hub can also be used as the connectivity point to your on-premises networks. The spoke virtual networks peer with the hub and can be used to isolate workloads. The Azure Virtual WAN (VWAN) replaces the hubs as a managed service.
+This section implements a hub-spoke topology in Azure. The hub virtual network acts as a central point of connectivity to many spoke virtual networks. The hub can also be used as the connectivity point to your on-premises networks. The spoke virtual networks peer with the hub and can be used to isolate workloads.
 
-This deployment includes one Azure Virtual WAN with a Virtual Hub and two peered spokes.
+A hub and spoke network topology allows you to create a central Hub VNet that contains shared networking components (such as Azure Firewall, ExpressRoute and VPN Gateways) that can then be used by spoke VNets, connected to the Hub VNet via VNET Peering, to centralize connectivity in your environment.
+
+Hub and spoke network design considerations & recommendations can be found [here](https://docs.microsoft.com/azure/cloud-adoption-framework/ready/azure-best-practices/traditional-azure-networking-topology).
+
+This deployment includes a Hub and two peered Spokes.
 
 ### Azure Security Center
 
