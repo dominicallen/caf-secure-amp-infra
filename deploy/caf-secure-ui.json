@@ -35,10 +35,10 @@
                 "name": "step1",
                 "label": "Azure Security Center",
                 "subLabel": {
-                    "preValidation": "",
-                    "postValidation": ""
+                    "preValidation": "Configure Azure Security Center settings",
+                    "postValidation": "Done"
                 },
-                "bladeTitle": "lzGs",
+                "bladeTitle": "Azure Security Center",
                 "elements": [
                     {
                         "name": "ptEmailSecurityContact",
@@ -315,7 +315,120 @@
                         "visible": true
                     }
                 ]
+            },
+            {
+                "name": "step2",
+                "label": "Hub-spoke Topology",
+                "subLabel": {
+                    "preValidation": "Configure Hub-spoke topology",
+                    "postValidation": "Done"
+                },
+                "bladeTitle": "Hub-spoke",
+                "elements": [
+                    {
+                        "name": "ptDeployHubSpoke",
+                        "type": "Microsoft.Common.OptionsGroup",
+                        "label": "Deploy Hub-spoke network topology with Azure Virtual WAN",
+                        "defaultValue": "Yes (recommended)",
+                        "toolTip": "If 'Yes', ARM will deploy hub-spoke network topology to the subscription. If 'No', it will be skipped",
+                        "visible": true,
+                        "constraints": {
+                            "allowedValues": [
+                                {
+                                    "label": "Yes (recommended)",
+                                    "value": "Yes"
+                                },
+                                {
+                                    "label": "No",
+                                    "value": "No"
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "name": "ptHubAddressPrefix",
+                        "type": "Microsoft.Common.TextBox",
+                        "label": "Hub Address Prefix",
+                        "toolTip": "IP address prefix for the hub",
+                        "visible": "[equals(steps('step2').ptDeployHubSpoke, 'Yes')]",
+                        "defaultValue": "192.168.0.0/16",
+                        "constraints": {
+                            "required": true,
+                            "regex": "^([0-9]{1,3}\\.){3}[0-9]{1,3}(\/([0-9]|[1-2][0-9]|3[0-2]))?$",
+                            "validationMessage": "Please provide a valid IP address prefix"
+                        }
+                    },
+                    {
+                        "name": "sectionSpokeOne",
+                        "type": "Microsoft.Common.Section",
+                        "label": "Spoke One",
+                        "elements": [
+                            {
+                                "name": "ptNetAddressPrefix",
+                                "type": "Microsoft.Common.TextBox",
+                                "label": "Network Address Prefix",
+                                "toolTip": "IP address prefix for the spoke network",
+                                "visible": "[equals(steps('step2').ptDeployHubSpoke, 'Yes')]",
+                                "defaultValue": "10.1.0.0/16",
+                                "constraints": {
+                                    "required": true,
+                                    "regex": "^([0-9]{1,3}\\.){3}[0-9]{1,3}(\/([0-9]|[1-2][0-9]|3[0-2]))?$",
+                                    "validationMessage": "Please provide a valid IP address prefix"
+                                }
+                            },
+                            {
+                                "name": "ptSubnetAddressPrefix",
+                                "type": "Microsoft.Common.TextBox",
+                                "label": "Subnet address Prefix",
+                                "toolTip": "IP address prefix for the spoke subnet",
+                                "visible": "[equals(steps('step2').ptDeployHubSpoke, 'Yes')]",
+                                "defaultValue": "10.1.0.0/24",
+                                "constraints": {
+                                    "required": true,
+                                    "regex": "^([0-9]{1,3}\\.){3}[0-9]{1,3}(\/([0-9]|[1-2][0-9]|3[0-2]))?$",
+                                    "validationMessage": "Please provide a valid IP address prefix"
+                                }
+                            }
+                        ],
+                        "visible": "[equals(steps('step2').ptDeployHubSpoke, 'Yes')]"
+                    },
+                    {
+                        "name": "sectionSpokeTwo",
+                        "type": "Microsoft.Common.Section",
+                        "label": "Spoke Two",
+                        "elements": [
+                            {
+                                "name": "ptNetAddressPrefix",
+                                "type": "Microsoft.Common.TextBox",
+                                "label": "Network Address Prefix",
+                                "toolTip": "IP address prefix for the spoke network",
+                                "visible": "[equals(steps('step2').ptDeployHubSpoke, 'Yes')]",
+                                "defaultValue": "10.2.0.0/16",
+                                "constraints": {
+                                    "required": true,
+                                    "regex": "^([0-9]{1,3}\\.){3}[0-9]{1,3}(\/([0-9]|[1-2][0-9]|3[0-2]))?$",
+                                    "validationMessage": "Please provide a valid IP address prefix"
+                                }
+                            },
+                            {
+                                "name": "ptSubnetAddressPrefix",
+                                "type": "Microsoft.Common.TextBox",
+                                "label": "Subnet address Prefix",
+                                "toolTip": "IP address prefix for the spoke subnet",
+                                "visible": "[equals(steps('step2').ptDeployHubSpoke, 'Yes')]",
+                                "defaultValue": "10.2.0.0/24",
+                                "constraints": {
+                                    "required": true,
+                                    "regex": "^([0-9]{1,3}\\.){3}[0-9]{1,3}(\/([0-9]|[1-2][0-9]|3[0-2]))?$",
+                                    "validationMessage": "Please provide a valid IP address prefix"
+                                }
+                            }
+                        ],
+                        "visible": "[equals(steps('step2').ptDeployHubSpoke, 'Yes')]"
+                    }
+                ]
             }
+
         ],
         "outputs": {
             "deploymentPrefix": "[basics('ptDeploymentPrefix')]",
@@ -330,7 +443,13 @@
             "enableAscForSqlOnVm": "[steps('step1').sectionAzureDefender.ptEnableAscForSqlOnVm]",
             "enableAscForArm": "[steps('step1').sectionAzureDefender.ptEnableAscForArm]",
             "enableAscForDns": "[steps('step1').sectionAzureDefender.ptEnableAscForDns]",
-            "enableAscForRegistries": "[steps('step1').sectionAzureDefender.ptEnableAscForRegistries]"
+            "enableAscForRegistries": "[steps('step1').sectionAzureDefender.ptEnableAscForRegistries]",
+            "deployHubSpokeTopology": "[steps('step2').ptDeployHubSpoke]",
+            "spokeNetworkOneNetAddressPrefix": "[steps('step2').sectionSpokeOne.ptNetAddressPrefix]",
+            "spokeNetworkOneSubnetAddressPrefix": "[steps('step2').sectionSpokeOne.ptSubnetAddressPrefix]",
+            "spokeNetworkTwoNetAddressPrefix": "[steps('step2').sectionSpokeTwo.ptNetAddressPrefix]",
+            "spokeNetworkTwoSubnetAddressPrefix": "[steps('step2').sectionSpokeTwo.ptSubnetAddressPrefix]",
+            "hubNetworkNetAddressPrefix": "[steps('step2').ptHubAddressPrefix]"
         }
     }
 }

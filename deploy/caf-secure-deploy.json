@@ -121,6 +121,53 @@
                 "Standard",
                 "Free"
             ]
+        },
+        "deployHubSpokeTopology": {
+            "type": "String",
+            "metadata": {
+                "displayName": "Deploy Hub-spoke network topology with Azure Virtual WAN",
+                "description": "If 'Yes', ARM will deploy hub-spoke network topology to the subscription. If 'No', it will be skipped"
+            },
+            "defaultValue": "Yes",
+            "allowedValues": [
+                "Yes",
+                "No"
+            ]
+        },
+        "spokeNetworkOneNetAddressPrefix": {
+            "type": "string",
+            "metadata": {
+                "displayName": "IP address prefix for the spoke one network"
+            },
+            "defaultValue": "10.1.0.0/16"
+        },
+        "spokeNetworkOneSubnetAddressPrefix": {
+            "type": "string",
+            "metadata": {
+                "displayName": "IP address prefix for the spoke one subnet"
+            },
+            "defaultValue": "10.1.0.0/24"
+        },
+        "spokeNetworkTwoNetAddressPrefix": {
+            "type": "string",
+            "metadata": {
+                "displayName": "IP address prefix for the spoke two network"
+            },
+            "defaultValue": "10.2.0.0/16"
+        },
+        "spokeNetworkTwoSubnetAddressPrefix": {
+            "type": "string",
+            "metadata": {
+                "displayName": "IP address prefix for the spoke two subnet"
+            },
+            "defaultValue": "10.2.0.0/24"
+        },
+        "hubNetworkNetAddressPrefix": {
+            "type": "string",
+            "metadata": {
+                "displayName": "IP address prefix for the hub network"
+            },
+            "defaultValue": "192.168.0.0/16"
         }
     },
     "variables": {
@@ -216,6 +263,7 @@
 
         // Deploy hubspoke network into resource group
         {
+            "condition": "[equals(parameters('deployHubSpokeTopology'), 'Yes')]",
             "type": "Microsoft.Resources/deployments",
             "apiVersion": "2020-10-01",
             "name": "[variables('hubSpokeDeploymentName')]",
@@ -232,6 +280,21 @@
                 "parameters": {
                     "deploymentPrefix": {
                         "value": "[parameters('deploymentPrefix')]"
+                    },
+                    "spokeNetworkOneNetAddressPrefix": {
+                        "value": "[parameters('spokeNetworkOneNetAddressPrefix')]"
+                    },
+                    "spokeNetworkOneSubnetAddressPrefix": {
+                        "value": "[parameters('spokeNetworkOneSubnetAddressPrefix')]"
+                    },
+                    "spokeNetworkTwoNetAddressPrefix": {
+                        "value": "[parameters('spokeNetworkTwoNetAddressPrefix')]"
+                    },
+                    "spokeNetworkTwoSubnetAddressPrefix": {
+                        "value": "[parameters('spokeNetworkTwoSubnetAddressPrefix')]"
+                    },
+                    "hubNetworkNetAddressPrefix": {
+                        "value": "[parameters('hubNetworkNetAddressPrefix')]"
                     }
                 }
             }

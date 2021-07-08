@@ -10,26 +10,61 @@
                 "description": "Provide a prefix (max 10 characters, unique at tenant-scope) for subscription resources created as part of this deploy."
             },
             "defaultValue": "cafsecure"
+        },
+        "spokeNetworkOneNetAddressPrefix": {
+            "type": "string",
+            "metadata": {
+                "displayName": "IP address prefix for the spoke one network"
+            },
+            "defaultValue": "10.1.0.0/16"
+        },
+        "spokeNetworkOneSubnetAddressPrefix": {
+            "type": "string",
+            "metadata": {
+                "displayName": "IP address prefix for the spoke one subnet"
+            },
+            "defaultValue": "10.1.0.0/24"
+        },
+        "spokeNetworkTwoNetAddressPrefix": {
+            "type": "string",
+            "metadata": {
+                "displayName": "IP address prefix for the spoke two network"
+            },
+            "defaultValue": "10.2.0.0/16"
+        },
+        "spokeNetworkTwoSubnetAddressPrefix": {
+            "type": "string",
+            "metadata": {
+                "displayName": "IP address prefix for the spoke two subnet"
+            },
+            "defaultValue": "10.2.0.0/24"
+        },
+        "hubNetworkNetAddressPrefix": {
+            "type": "string",
+            "metadata": {
+                "displayName": "IP address prefix for the hub network"
+            },
+            "defaultValue": "192.168.0.0/16"
         }
     },
     "variables": {
         "location": "[resourceGroup().location]",
         "spokeNetworkOne": {
             "name": "[concat('vnet-', parameters('deploymentPrefix'), '-spoke-one')]",
-            "addressPrefix": "10.1.0.0/16",
+            "addressPrefix": "[parameters('spokeNetworkOneNetAddressPrefix')]",
             "subnetName": "[concat('snet-', parameters('deploymentPrefix'), '-spoke-one-workload')]",
-            "subnetPrefix": "10.1.0.0/24"
+            "subnetPrefix": "[parameters('spokeNetworkOneSubnetAddressPrefix')]"
         },
         "spokeNetworkTwo": {
             "name": "[concat('vnet-', parameters('deploymentPrefix'), '-spoke-two')]",
-            "addressPrefix": "10.2.0.0/16",
+            "addressPrefix": "[parameters('spokeNetworkTwoNetAddressPrefix')]",
             "subnetName": "[concat('snet-', parameters('deploymentPrefix'), '-spoke-two-workload')]",
-            "subnetPrefix": "10.2.0.0/24"
+            "subnetPrefix": "[parameters('spokeNetworkTwoSubnetAddressPrefix')]"
         },
         "hubNetwork": {
             "vWanName": "[concat('vwan-', parameters('deploymentPrefix'))]",
             "vHubName": "[concat('vhub-', parameters('deploymentPrefix'))]",
-            "addressPrefix": "192.168.0.0/16"
+            "addressPrefix": "[parameters('hubNetworkNetAddressPrefix')]"
         }
     },
     "resources": [
