@@ -15,7 +15,7 @@
             "type": "String",
             "metadata": {
                 "displayName": "Enables DDoS Protection plan",
-                "description": "If 'Yes', ARM will deploy DDoS Protection plan. If 'No', it will be skipped"
+                "description": "If 'Yes', DDoS Protection plan will be applied to spokes with ingress traffic. If 'No', it will be skipped"
             },
             "defaultValue": "Yes",
             "allowedValues": [
@@ -30,26 +30,26 @@
             },
             "defaultValue": "192.168.0.0/16"
         },
-        "subnetAddressPrefixForBastion": {
+        "subnetAddressPrefixForAppGw": {
             "type": "string",
             "metadata": {
-                "description": "Provide subnet for Azure Bastion subnet."
+                "displayName": "Subnet prefix for Azure Application Gateway"
             },
             "defaultValue": "192.168.1.0/24"
         },
         "subnetAddressPrefixForAzFw": {
             "type": "string",
             "metadata": {
-                "description": "Provide subnet for Azure Firewall subnet."
+                "displayName": "Subnet prefix for Azure Firewall"
             },
             "defaultValue": "192.168.2.0/24"
         },
-        "subnetAddressPrefixForAppGw": {
+        "subnetAddressPrefixForBastion": {
             "type": "string",
             "metadata": {
-                "description": "Provide subnet for Azure Application Gateway subnet."
+                "displayName": "Subnet prefix for Azure Bastion"
             },
-            "defaultValue": "192.168.3.0/24"
+            "defaultValue": "192.168.1.0/24"
         }
     },
     "variables": {
@@ -94,13 +94,13 @@
                         "hubNetworkNetAddressPrefix": {
                             "type": "string"
                         },
-                        "subnetAddressPrefixForBastion": {
+                        "subnetAddressPrefixForAppGw": {
                             "type": "string"
                         },
                         "subnetAddressPrefixForAzFw": {
                             "type": "string"
                         },
-                        "subnetAddressPrefixForAppGw": {
+                        "subnetAddressPrefixForBastion": {
                             "type": "string"
                         }
                     },
@@ -148,15 +148,6 @@
                                 },
                                 "subnets": [
                                     {
-                                        "name": "BastionSubnet",
-                                        "properties": {
-                                            "addressPrefix": "[parameters('subnetAddressPrefixForBastion')]",
-                                            "networkSecurityGroup": {
-                                                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('networkSecurityGroupName'))]"
-                                            }
-                                        }
-                                    },
-                                    {
                                         "name": "GatewaySubnet",
                                         "properties": {
                                             "addressPrefix": "[parameters('subnetAddressPrefixForAppGw')]"
@@ -166,6 +157,15 @@
                                         "name": "AzureFirewallSubnet",
                                         "properties": {
                                             "addressPrefix": "[parameters('subnetAddressPrefixForAzFw')]"
+                                        }
+                                    },
+                                    {
+                                        "name": "BastionSubnet",
+                                        "properties": {
+                                            "addressPrefix": "[parameters('subnetAddressPrefixForBastion')]",
+                                            "networkSecurityGroup": {
+                                                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('networkSecurityGroupName'))]"
+                                            }
                                         }
                                     }
                                 ],
@@ -197,14 +197,14 @@
                     "hubNetworkNetAddressPrefix": {
                         "value": "[parameters('hubNetworkNetAddressPrefix')]"
                     },
-                    "subnetAddressPrefixForBastion": {
-                        "value": "[parameters('subnetAddressPrefixForBastion')]"
+                    "subnetAddressPrefixForAppGw": {
+                        "value": "[parameters('subnetAddressPrefixForAppGw')]"
                     },
                     "subnetAddressPrefixForAzFw": {
                         "value": "[parameters('subnetAddressPrefixForAzFw')]"
                     },
-                    "subnetAddressPrefixForAppGw": {
-                        "value": "[parameters('subnetAddressPrefixForAppGw')]"
+                    "subnetAddressPrefixForBastion": {
+                        "value": "[parameters('subnetAddressPrefixForBastion')]"
                     }
                 }
             }

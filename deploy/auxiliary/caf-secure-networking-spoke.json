@@ -27,20 +27,21 @@
         "subnetAddressPrefixForAppGW": {
             "type": "string",
             "metadata": {
-                "displayName": "IP address prefix for the application gateway subnet"
+                "displayName": "Subnet prefix for the application gateway"
             },
-            "defaultValue": "10.1.0.0/24"
+            "defaultValue": "10.1.1.0/24"
         },
         "subnetAddressPrefixForWorkload": {
             "type": "string",
             "metadata": {
-                "displayName": "IP address prefix for the workload subnet"
+                "displayName": "Subnet prefix for the workload"
             },
-            "defaultValue": "10.1.1.0/24"
+            "defaultValue": "10.1.2.0/24"
         },
         "DdoSId": {
             "type": "string",
             "metadata": {
+                "displayName": "DDoS Id",
                 "description": "The DDoS Standard protection plan information id to use with the hub spoke."
             },
             "defaultValue": ""
