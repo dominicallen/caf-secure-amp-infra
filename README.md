@@ -62,7 +62,7 @@ Azure Onboarding is implemented using a single deployment script that wil create
 
 Use the following link to deploy it to a greenfield subscription:
 
-[![Deploy To Azure](https://raw.githubusercontent.com/Azure/azure-quickstart-templates/master/1-CONTRIBUTION-GUIDE/images/deploytoazure.svg?sanitize=true)](https://portal.azure.com/#blade/Microsoft_Azure_CreateUIDef/CustomDeploymentBlade/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fmspnp%2Fcaf-secure-amp-infra%2Fpabrus%2Fhubspoke%2Fdeploy%2Fcaf-secure-deploy.json/createUIDefinitionUri/https%3A%2F%2Fraw.githubusercontent.com%2Fmspnp%2Fcaf-secure-amp-infra%2Fpabrus%2Fhubspoke%2Fdeploy%2Fcaf-secure-ui.json)
+[![Deploy To Azure](https://raw.githubusercontent.com/Azure/azure-quickstart-templates/master/1-CONTRIBUTION-GUIDE/images/deploytoazure.svg?sanitize=true)](https://portal.azure.com/#blade/Microsoft_Azure_CreateUIDef/CustomDeploymentBlade/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fmspnp%2Fcaf-secure-amp-infra%2Fpabrus%2Fazurefw%2Fdeploy%2Fcaf-secure-deploy.json/createUIDefinitionUri/https%3A%2F%2Fraw.githubusercontent.com%2Fmspnp%2Fcaf-secure-amp-infra%2Fpabrus%2Fazurefw%2Fdeploy%2Fcaf-secure-ui.json)
 
 ### Log Analytics Workspace
 
@@ -78,7 +78,11 @@ A hub and spoke network topology allows you to create a central Hub VNet that co
 
 Hub and spoke network design considerations & recommendations can be found [here](https://docs.microsoft.com/azure/cloud-adoption-framework/ready/azure-best-practices/traditional-azure-networking-topology).
 
-This deployment includes a Hub and two peered Spokes.
+This deployment includes:
+
+- One Hub
+- Two peered Spokes
+- Azure Firewall
 
 ### Azure Security Center
 
