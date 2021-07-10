@@ -62,7 +62,7 @@ Azure Onboarding is implemented using a single deployment script that wil create
 
 Use the following link to deploy it to a greenfield subscription:
 
-[![Deploy To Azure](https://raw.githubusercontent.com/Azure/azure-quickstart-templates/master/1-CONTRIBUTION-GUIDE/images/deploytoazure.svg?sanitize=true)](https://portal.azure.com/#blade/Microsoft_Azure_CreateUIDef/CustomDeploymentBlade/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fmspnp%2Fcaf-secure-amp-infra%2Fpabrus%2Fazurefw%2Fdeploy%2Fcaf-secure-deploy.json/createUIDefinitionUri/https%3A%2F%2Fraw.githubusercontent.com%2Fmspnp%2Fcaf-secure-amp-infra%2Fpabrus%2Fazurefw%2Fdeploy%2Fcaf-secure-ui.json)
+[![Deploy To Azure](https://raw.githubusercontent.com/Azure/azure-quickstart-templates/master/1-CONTRIBUTION-GUIDE/images/deploytoazure.svg?sanitize=true)](https://portal.azure.com/#blade/Microsoft_Azure_CreateUIDef/CustomDeploymentBlade/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fmspnp%2Fcaf-secure-amp-infra%2Fpabrus%2Fappgw%2Fdeploy%2Fcaf-secure-deploy.json/createUIDefinitionUri/https%3A%2F%2Fraw.githubusercontent.com%2Fmspnp%2Fcaf-secure-amp-infra%2Fpabrus%2Fappgw%2Fdeploy%2Fcaf-secure-ui.json)
 
 ### Log Analytics Workspace
 
@@ -83,6 +83,15 @@ This deployment includes:
 - One Hub
 - Two peered Spokes
 - Azure Firewall
+- Azure Application Gateway
+
+#### Firewall and Application Gateway in parallel
+
+Because of its simplicity and flexibility, running Application Gateway and Azure Firewall in parallel is often the best scenario.
+
+Implement this design if there's a mix of web and non-web workloads in the virtual network. Azure WAF protects inbound traffic to the web workloads, and the Azure Firewall inspects inbound traffic for the other applications. The Azure Firewall will cover outbound flows from both workload types.
+
+For further information, please check [Firewall and Application Gateway for virtual networks - Azure Example Scenarios](https://docs.microsoft.com/azure/architecture/example-scenario/gateway/firewall-application-gateway#firewall-and-application-gateway-in-parallel)
 
 ### Azure Security Center
 

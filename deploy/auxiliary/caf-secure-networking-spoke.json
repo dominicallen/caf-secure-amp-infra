@@ -30,10 +30,10 @@
             },
             "defaultValue": "10.1.0.0/16"
         },
-        "subnetAddressPrefixForAppGW": {
+        "subnetAddressPrefixForGw": {
             "type": "string",
             "metadata": {
-                "displayName": "Subnet prefix for the application gateway"
+                "displayName": "Subnet prefix for the gateway"
             },
             "defaultValue": "10.1.1.0/24"
         },
@@ -101,7 +101,7 @@
                         "addressPrefix": {
                             "type": "string"
                         },
-                        "subnetAddressPrefixForAppGW": {
+                        "subnetAddressPrefixForGw": {
                             "type": "string"
                         },
                         "subnetAddressPrefixForWorkload": {
@@ -165,9 +165,9 @@
                                 },
                                 "subnets": [
                                     {
-                                        "name": "[concat('snet-', parameters('spokeName'), '-appgw')]",
+                                        "name": "GatewaySubnet",
                                         "properties": {
-                                            "addressPrefix": "[parameters('subnetAddressPrefixForAppGW')]"
+                                            "addressPrefix": "[parameters('subnetAddressPrefixForGw')]"
                                         }
                                     },
                                     {
@@ -229,8 +229,8 @@
                     "addressPrefix": {
                         "value": "[parameters('addressPrefix')]"
                     },
-                    "subnetAddressPrefixForAppGW": {
-                        "value": "[parameters('subnetAddressPrefixForAppGW')]"
+                    "subnetAddressPrefixForGw": {
+                        "value": "[parameters('subnetAddressPrefixForGw')]"
                     },
                     "subnetAddressPrefixForWorkload": {
                         "value": "[parameters('subnetAddressPrefixForWorkload')]"
@@ -291,7 +291,6 @@
                 "parameters": {
                     "spokeNetworkId": {
                         "value": "[reference(variables('deploymentName')).outputs.networkId.value]"
-                        // concat(subscription().id,'/resourceGroups/',parameters('vNetRgName'), '/providers/','Microsoft.Network/virtualNetworks/', parameters('vNetName'))]"
                     },
                     "hubName": {
                         "value": "[split(parameters('hubNetworkId'),'/')[8]]"

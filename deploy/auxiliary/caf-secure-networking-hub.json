@@ -48,10 +48,10 @@
             },
             "defaultValue": "192.168.0.0/16"
         },
-        "subnetAddressPrefixForAppGw": {
+        "subnetAddressPrefixForGw": {
             "type": "string",
             "metadata": {
-                "displayName": "Subnet prefix for Azure Application Gateway"
+                "displayName": "Subnet prefix for the gateway"
             },
             "defaultValue": "192.168.1.0/24"
         },
@@ -69,10 +69,24 @@
             },
             "defaultValue": "192.168.3.0/24"
         },
+        "subnetAddressPrefixForAppGw": {
+            "type": "string",
+            "metadata": {
+                "displayName": "Subnet prefix for Azure Application Gateway"
+            },
+            "defaultValue": "192.168.200.0/24"
+        },
         "azFirewallZones": {
             "type": "array",
             "metadata": {
                 "displayName": "Availability Zones for the Azure Firewall"
+            },
+            "defaultValue": []
+        },
+        "appGwZones": {
+            "type": "array",
+            "metadata": {
+                "displayName": "Availability Zones for the Azure Application Gateway"
             },
             "defaultValue": []
         }
@@ -125,7 +139,7 @@
                         "hubNetworkNetAddressPrefix": {
                             "type": "string"
                         },
-                        "subnetAddressPrefixForAppGw": {
+                        "subnetAddressPrefixForGw": {
                             "type": "string"
                         },
                         "subnetAddressPrefixForAzFw": {
@@ -134,7 +148,13 @@
                         "subnetAddressPrefixForBastion": {
                             "type": "string"
                         },
+                        "subnetAddressPrefixForAppGw": {
+                            "type": "string"
+                        },
                         "azFirewallZones": {
+                            "type": "array"
+                        },
+                        "appGwZones": {
                             "type": "array"
                         }
                     },
@@ -144,7 +164,9 @@
                         "dDoSName": "[concat('ddos-', parameters('deploymentPrefix'))]",
                         "azFwName": "[concat('fw-', parameters('deploymentPrefix'))]",
                         "azFwIpName": "[concat(variables('azFwName'), '-pip')]",
-                        "azFwPolicyName": "[concat(variables('azFwName'), '-policy')]"
+                        "azFwPolicyName": "[concat(variables('azFwName'), '-policy')]",
+                        "appGwName": "[concat('appgw-', parameters('deploymentPrefix'))]",
+                        "appGwIpName": "[concat(variables('appGwName'), '-pip')]"
                     },
                     "resources": [
                         // Deploy DDoS Protection plan
@@ -187,7 +209,7 @@
                                     {
                                         "name": "GatewaySubnet",
                                         "properties": {
-                                            "addressPrefix": "[parameters('subnetAddressPrefixForAppGw')]"
+                                            "addressPrefix": "[parameters('subnetAddressPrefixForGw')]"
                                         }
                                     },
                                     {
@@ -203,6 +225,12 @@
                                             "networkSecurityGroup": {
                                                 "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('networkSecurityGroupName'))]"
                                             }
+                                        }
+                                    },
+                                    {
+                                        "name": "AppGwSubnet",
+                                        "properties": {
+                                            "addressPrefix": "[parameters('subnetAddressPrefixForAppGw')]"
                                         }
                                     }
                                 ],
@@ -245,9 +273,9 @@
                             "location": "[resourceGroup().location]",
                             "zones": "[if(not(empty(parameters('azFirewallZones'))), parameters('azFirewallZones'), json('null'))]",
                             "dependsOn": [
-                                "[resourceId('Microsoft.Network/firewallPolicies/', variables('azFwPolicyName'))]",
-                                "[resourceId('Microsoft.Network/publicIpAddresses/', variables('azFwIpName'))]",
-                                "[resourceId('Microsoft.Network/virtualNetworks/', variables('hubNetworkName'))]"
+                                "[resourceId('Microsoft.Network/firewallPolicies', variables('azFwPolicyName'))]",
+                                "[resourceId('Microsoft.Network/publicIpAddresses', variables('azFwIpName'))]",
+                                "[resourceId('Microsoft.Network/virtualNetworks', variables('hubNetworkName'))]"
                             ],
                             "properties": {
                                 "ipConfigurations": [
@@ -271,7 +299,7 @@
                         {
                             "type": "Microsoft.Network/azureFirewalls/providers/diagnosticSettings",
                             "apiVersion": "2017-05-01-preview",
-                            "name": "[concat(variables('azfwname'), '/', 'Microsoft.Insights/', 'default')]",
+                            "name": "[concat(variables('azfwname'), '/Microsoft.Insights/default')]",
                             "dependsOn": [
                                 "[resourceId('Microsoft.Network/azureFirewalls', variables('azFwName'))]"
                             ],
@@ -292,6 +320,153 @@
                                     }
                                 ]
                             }
+                        },
+
+                        // Application Gateway Public IP
+                        {
+                            "type": "Microsoft.Network/publicIPAddresses",
+                            "apiVersion": "2020-05-01",
+                            "name": "[variables('appGwIpName')]",
+                            "location": "[resourceGroup().location]",
+                            "sku": {
+                                "name": "Standard"
+                            },
+                            "properties": {
+                                "publicIPAllocationMethod": "Static"
+                            }
+                        },
+
+                        // Application Gateway
+                        {
+                            "type": "Microsoft.Network/applicationGateways",
+                            "apiVersion": "2020-05-01",
+                            "name": "[variables('appGwName')]",
+                            "location": "[resourceGroup().location]",
+                            "zones": "[if(not(empty(parameters('appGwZones'))), parameters('appGwZones'), json('null'))]",
+                            "dependsOn": [
+                                "[resourceId('Microsoft.Network/virtualNetworks', variables('hubNetworkName'))]",
+                                "[resourceId('Microsoft.Network/publicIPAddresses', variables('appGwIpName'))]"
+                            ],
+                            "properties": {
+                                "sku": {
+                                    "name": "WAF_v2",
+                                    "tier": "WAF_v2"
+                                },
+                                "gatewayIPConfigurations": [
+                                    {
+                                        "name": "appGatewayIpConfig",
+                                        "properties": {
+                                            "subnet": {
+                                                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('hubNetworkName'), 'AppGwSubnet')]"
+                                            }
+                                        }
+                                    }
+                                ],
+                                "frontendIPConfigurations": [
+                                    {
+                                        "name": "appGwPublicFrontendIp",
+                                        "properties": {
+                                            "privateIPAllocationMethod": "Dynamic",
+                                            "publicIPAddress": {
+                                                "id": "[resourceId('Microsoft.Network/publicIPAddresses', variables('appGwIpName'))]"
+                                            }
+                                        }
+                                    }
+                                ],
+                                "frontendPorts": [
+                                    {
+                                        "name": "port_80",
+                                        "properties": {
+                                            "port": 80
+                                        }
+                                    }
+                                ],
+                                "backendAddressPools": [
+                                    {
+                                        "name": "backend-default"
+                                    }
+                                ],
+                                "backendHttpSettingsCollection": [
+                                    {
+                                        "name": "http-setting-default",
+                                        "properties": {
+                                            "port": 80,
+                                            "protocol": "Http",
+                                            "cookieBasedAffinity": "Disabled",
+                                            "pickHostNameFromBackendAddress": false,
+                                            "requestTimeout": 20
+                                        }
+                                    }
+                                ],
+                                "httpListeners": [
+                                    {
+                                        "name": "http-listener-default",
+                                        "properties": {
+                                            "frontendIPConfiguration": {
+                                                "id": "[resourceId('Microsoft.Network/applicationGateways/frontendIPConfigurations', variables('appGwName'), 'appGwPublicFrontendIp')]"
+                                            },
+                                            "frontendPort": {
+                                                "id": "[resourceId('Microsoft.Network/applicationGateways/frontendPorts', variables('appGwName'), 'port_80')]"
+                                            },
+                                            "protocol": "Http",
+                                            "requireServerNameIndication": false
+                                        }
+                                    }
+                                ],
+                                "requestRoutingRules": [
+                                    {
+                                        "name": "http-rule",
+                                        "properties": {
+                                            "ruleType": "Basic",
+                                            "httpListener": {
+                                                "id": "[resourceId('Microsoft.Network/applicationGateways/httpListeners', variables('appGwName'), 'http-listener-default')]"
+                                            },
+                                            "backendAddressPool": {
+                                                "id": "[resourceId('Microsoft.Network/applicationGateways/backendAddressPools', variables('appGwName'), 'backend-default')]"
+                                            },
+                                            "backendHttpSettings": {
+                                                "id": "[resourceId('Microsoft.Network/applicationGateways/backendHttpSettingsCollection', variables('appGwName'), 'http-setting-default')]"
+                                            }
+                                        }
+                                    }
+                                ],
+                                "enableHttp2": false,
+                                "autoscaleConfiguration": {
+                                    "minCapacity": 0,
+                                    "maxCapacity": 5
+                                },
+                                "webApplicationFirewallConfiguration": {
+                                    "enabled": true,
+                                    "firewallMode": "Prevention",
+                                    "ruleSetType": "OWASP",
+                                    "ruleSetVersion": "3.0"
+                                }
+                            }
+                        },
+                        {
+                            "type": "Microsoft.Network/applicationGateways/providers/diagnosticSettings",
+                            "apiVersion": "2017-05-01-preview",
+                            "name": "[concat(variables('appGwName'), '/Microsoft.Insights/default')]",
+                            "dependsOn": [
+                                "[resourceId('Microsoft.Network/applicationGateways', variables('appGwName'))]"
+                            ],
+                            "properties": {
+                                "workspaceId": "[parameters('workspaceId')]",
+                                "logs": [
+                                    {
+                                        "category": "ApplicationGatewayAccessLog",
+                                        "enabled": "[parameters('enableLogs')]"
+                                    },
+                                    {
+                                        "category": "ApplicationGatewayPerformanceLog",
+                                        "enabled": "[parameters('enableLogs')]"
+                                    },
+                                    {
+                                        "category": "ApplicationGatewayFirewallLog",
+                                        "enabled": "[parameters('enableLogs')]"
+                                    }
+                                ]
+                            }
                         }
                     ],
                     "outputs": {
@@ -306,6 +481,10 @@
                         "azFirewallId": {
                             "type": "string",
                             "value": "[resourceId('Microsoft.Network/azureFirewalls', variables('azFwName'))]"
+                        },
+                        "appGwId": {
+                            "type": "string",
+                            "value": "[resourceId('Microsoft.Network/applicationGateways', variables('appGwName'))]"
                         }
                     }
                 },
@@ -325,8 +504,8 @@
                     "hubNetworkNetAddressPrefix": {
                         "value": "[parameters('hubNetworkNetAddressPrefix')]"
                     },
-                    "subnetAddressPrefixForAppGw": {
-                        "value": "[parameters('subnetAddressPrefixForAppGw')]"
+                    "subnetAddressPrefixForGw": {
+                        "value": "[parameters('subnetAddressPrefixForGw')]"
                     },
                     "subnetAddressPrefixForAzFw": {
                         "value": "[parameters('subnetAddressPrefixForAzFw')]"
@@ -334,8 +513,14 @@
                     "subnetAddressPrefixForBastion": {
                         "value": "[parameters('subnetAddressPrefixForBastion')]"
                     },
+                    "subnetAddressPrefixForAppGw": {
+                        "value": "[parameters('subnetAddressPrefixForAppGw')]"
+                    },
                     "azFirewallZones": {
                         "value": "[parameters('azFirewallZones')]"
+                    },
+                    "appGwZones": {
+                        "value": "[parameters('appGwZones')]"
                     }
                 }
             }
@@ -353,6 +538,10 @@
         "azFirewallId": {
             "type": "string",
             "value": "[reference(variables('deploymentName')).outputs.azFirewallId.value]"
+        },
+        "appGwId": {
+            "type": "string",
+            "value": "[reference(variables('deploymentName')).outputs.appGwId.value]"
         }
     }
 }

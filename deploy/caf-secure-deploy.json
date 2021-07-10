@@ -153,10 +153,10 @@
             },
             "defaultValue": "192.168.0.0/16"
         },
-        "hubSubnetAddressPrefixForAppGw": {
+        "hubSubnetAddressPrefixForGw": {
             "type": "string",
             "metadata": {
-                "displayName": "Subnet prefix for Azure Application Gateway for hub"
+                "displayName": "Subnet prefix for the gateway for hub"
             },
             "defaultValue": "192.168.1.0/24"
         },
@@ -174,6 +174,13 @@
             },
             "defaultValue": "192.168.3.0/24"
         },
+        "hubSubnetAddressPrefixForAppGw": {
+            "type": "string",
+            "metadata": {
+                "displayName": "Subnet prefix for Azure Application Gateway for hub"
+            },
+            "defaultValue": "192.168.200.0/24"
+        },
         "spokeOneAddressPrefix": {
             "type": "string",
             "metadata": {
@@ -181,10 +188,10 @@
             },
             "defaultValue": "10.1.0.0/16"
         },
-        "spokeOneSubnetAddressPrefixForAppGW": {
+        "spokeOneSubnetAddressPrefixForGw": {
             "type": "string",
             "metadata": {
-                "displayName": "Subnet prefix for the application gateway for spoke one"
+                "displayName": "Subnet prefix for the gateway for spoke one"
             },
             "defaultValue": "10.1.1.0/24"
         },
@@ -202,10 +209,10 @@
             },
             "defaultValue": "10.2.0.0/16"
         },
-        "spokeTwoSubnetAddressPrefixForAppGW": {
+        "spokeTwoSubnetAddressPrefixForGw": {
             "type": "string",
             "metadata": {
-                "displayName": "Subnet prefix for the application gateway for spoke two"
+                "displayName": "Subnet prefix for the gateway for spoke two"
             },
             "defaultValue": "10.2.1.0/24"
         },
@@ -222,10 +229,17 @@
                 "displayName": "Availability Zones for the Azure Firewall"
             },
             "defaultValue": []
+        },
+        "appGwZones": {
+            "type": "array",
+            "metadata": {
+                "displayName": "Availability Zones for the Azure Application Gateway"
+            },
+            "defaultValue": []
         }
     },
     "variables": {
-        "templateRootUri": "https://raw.githubusercontent.com/mspnp/caf-secure-amp-infra/pabrus/azurefw/deploy/auxiliary/",
+        "templateRootUri": "https://raw.githubusercontent.com/mspnp/caf-secure-amp-infra/pabrus/appgw/deploy/auxiliary/",
 
         "networkingDeploymentName": "[concat('deploy-', parameters('deploymentPrefix'), '-networking')]",
         "workspaceDeploymentName": "[concat('deploy-', parameters('deploymentPrefix'), '-workspace')]",
@@ -332,8 +346,8 @@
                     "hubNetworkNetAddressPrefix": {
                         "value": "[parameters('hubNetworkNetAddressPrefix')]"
                     },
-                    "hubSubnetAddressPrefixForAppGw": {
-                        "value": "[parameters('hubSubnetAddressPrefixForAppGw')]"
+                    "hubSubnetAddressPrefixForGw": {
+                        "value": "[parameters('hubSubnetAddressPrefixForGw')]"
                     },
                     "hubSubnetAddressPrefixForAzFw": {
                         "value": "[parameters('hubSubnetAddressPrefixForAzFw')]"
@@ -341,11 +355,14 @@
                     "hubSubnetAddressPrefixForBastion": {
                         "value": "[parameters('hubSubnetAddressPrefixForBastion')]"
                     },
+                    "hubSubnetAddressPrefixForAppGw": {
+                        "value": "[parameters('hubSubnetAddressPrefixForAppGw')]"
+                    },
                     "spokeOneAddressPrefix": {
                         "value": "[parameters('spokeOneAddressPrefix')]"
                     },
-                    "spokeOneSubnetAddressPrefixForAppGW": {
-                        "value": "[parameters('spokeOneSubnetAddressPrefixForAppGW')]"
+                    "spokeOneSubnetAddressPrefixForGw": {
+                        "value": "[parameters('spokeOneSubnetAddressPrefixForGw')]"
                     },
                     "spokeOneSubnetAddressPrefixForWorkload": {
                         "value": "[parameters('spokeOneSubnetAddressPrefixForWorkload')]"
@@ -353,14 +370,17 @@
                     "spokeTwoAddressPrefix": {
                         "value": "[parameters('spokeTwoAddressPrefix')]"
                     },
-                    "spokeTwoSubnetAddressPrefixForAppGW": {
-                        "value": "[parameters('spokeTwoSubnetAddressPrefixForAppGW')]"
+                    "spokeTwoSubnetAddressPrefixForGw": {
+                        "value": "[parameters('spokeTwoSubnetAddressPrefixForGw')]"
                     },
                     "spokeTwoSubnetAddressPrefixForWorkload": {
                         "value": "[parameters('spokeTwoSubnetAddressPrefixForWorkload')]"
                     },
                     "azFirewallZones": {
                         "value": "[parameters('azFirewallZones')]"
+                    },
+                    "appGwZones": {
+                        "value": "[parameters('appGwZones')]"
                     },
                     "templateRootUri": {
                         "value": "[variables('templateRootUri')]"
